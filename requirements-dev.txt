@@ -1,0 +1,9 @@
+black==23.3.0
+isort==5.12.0
+flake8==6.1.0
+pre-commit
+
+# CPU-only versions (auto-resolves on macOS)
+torch==2.1.2
+torchvision==0.16.2
+torchaudio==2.1.2
