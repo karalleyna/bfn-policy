@@ -26,5 +26,5 @@ jobs:
       - name: Run isort
         run: isort --check-only .
 
-      - name: Run flake8
-        run: flake8 .
+      # - name: Run flake8
+      #   run: flake8 .

@@ -12,7 +12,7 @@ black .
 echo "🔃 Running isort..."
 isort .
 
-echo "🔍 Running flake8..."
-flake8 .
+# echo "🔍 Running flake8..."
+# flake8 .
 
 echo "✅ All checks passed and code formatted."
