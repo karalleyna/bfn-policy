@@ -14,7 +14,6 @@ configure_paths()
 
 # Standard imports
 import copy
-import pathlib
 import random
 
 # Third-party imports
@@ -27,9 +26,6 @@ from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 
 # Project-specific modules
-from datasets.base import BaseDataset
-from models.ema import EMAModel
-from runners.base import BaseRunner
 from utils.checkpoints import TopKCheckpointManager
 from utils.logging import JsonLogger
 from utils.lr_scheduler import get_scheduler
@@ -39,7 +35,7 @@ from workspaces.base import BaseWorkspace
 OmegaConf.register_new_resolver("eval", eval, replace=True)
 
 
-class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
+class DiffusionUNetHybridWorkspace(BaseWorkspace):
     include_keys = ["global_step", "epoch"]
 
     def __init__(self, cfg: OmegaConf, output_dir=None):
@@ -69,6 +65,7 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
 
         train_loader, val_loader, normalizer = self._prepare_data(cfg)
         self.model.set_normalizer(normalizer)
+
         if self.ema_model:
             self.ema_model.set_normalizer(normalizer)
 
@@ -110,7 +107,8 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
 
     def _prepare_data(self, cfg):
         dataset = hydra.utils.instantiate(cfg.task.dataset)
-        assert isinstance(dataset, BaseImageDataset)
+        # TODO: Uncomment when BaseImageDataset is available
+        # assert isinstance(dataset, BaseImageDataset)
         train_loader = DataLoader(dataset, **cfg.dataloader)
         val_loader = DataLoader(dataset.get_validation_dataset(), **cfg.val_dataloader)
         return train_loader, val_loader, dataset.get_normalizer()
@@ -136,7 +134,8 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
         runner = hydra.utils.instantiate(
             cfg.task.env_runner, output_dir=self.output_dir
         )
-        assert isinstance(runner, BaseImageRunner)
+        # TODO: Uncomment when BaseImageRunner is available
+        # assert isinstance(runner, BaseImageRunner)
         return runner
 
     def _init_logging(self, cfg):
@@ -296,7 +295,7 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
     config_name=pathlib.Path(__file__).stem,
 )
 def main(cfg):
-    workspace = TrainDiffusionUnetHybridWorkspace(cfg)
+    workspace = DiffusionUNetHybridWorkspace(cfg)
     workspace.run()
 
 

@@ -2,7 +2,7 @@ import torch
 from torch.nn.modules.batchnorm import _BatchNorm
 
 
-class EMAModel:
+class EMA:
     """
     Exponential Moving Average of models weights
     """
@@ -43,31 +43,18 @@ class EMAModel:
 
     def get_decay(self, optimization_step):
         """
-        Compute the decay factor for the exponential moving average,
-        which is often used to smooth parameter updates
-        (e.g., in target networks or parameter averaging).
+        Compute the decay factor for the exponential moving average.
         """
-        # EMA only starts applying after self.update_after_step.
-        # Make sure there's a delay before EMA begins.
         step = max(0, optimization_step - self.update_after_step - 1)
-
-        # For small step, decay grows slowly.
-        # For large step, decay asymptotically approaches 1.
         value = 1 - (1 + step / self.inv_gamma) ** -self.power
 
         if step <= 0:
-            # If we are at or before the update delay (step is 0 or negative),
-            # return zero decay — i.e., don’t start averaging yet.
             return 0.0
 
-        # Clamp the value to be within the specified min and max bounds.
         return max(self.min_value, min(value, self.max_value))
 
     @torch.no_grad()
     def step(self, new_model):
-        """
-        new_model: a PyTorch model whose parameters will be used to update the EMA model (self.averaged_model).
-        """
         self.decay = self.get_decay(self.optimization_step)
 
         # old_all_dataptrs = set()
@@ -76,6 +63,7 @@ class EMAModel:
         #     if data_ptr != 0:
         #         old_all_dataptrs.add(data_ptr)
 
+        all_dataptrs = set()
         for module, ema_module in zip(
             new_model.modules(), self.averaged_model.modules()
         ):

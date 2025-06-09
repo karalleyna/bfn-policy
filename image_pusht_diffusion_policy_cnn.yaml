@@ -1,4 +1,5 @@
-_target_: diffusion_policy.workspace.train_diffusion_unet_hybrid_workspace.TrainDiffusionUnetHybridWorkspace
+_target_: workspaces.diffusion_unet_hybrid.TrainDiffusionUnetHybridWorkspace
+
 checkpoint:
   save_last_ckpt: true
   save_last_snapshot: false
@@ -7,6 +8,7 @@ checkpoint:
     k: 5
     mode: max
     monitor_key: test_mean_score
+  
 dataloader:
   batch_size: 64
   num_workers: 8
@@ -14,30 +16,35 @@ dataloader:
   pin_memory: true
   shuffle: true
 dataset_obs_steps: 2
+
 ema:
-  _target_: diffusion_policy.model.diffusion.ema_model.EMAModel
+  _target_: models.ema.EMA
   inv_gamma: 1.0
   max_value: 0.9999
   min_value: 0.0
   power: 0.75
   update_after_step: 0
+
 exp_name: default
 horizon: 16
 keypoint_visible_rate: 1.0
+
 logging:
   group: null
   id: null
   mode: online
   name: 2023.01.16-20.20.06_train_diffusion_unet_hybrid_pusht_image
-  project: diffusion_policy_debug
+  project: bfn_policy_debug
   resume: true
   tags:
   - train_diffusion_unet_hybrid
   - pusht_image
   - default
+
 multi_run:
   run_dir: data/outputs/2023.01.16/20.20.06_train_diffusion_unet_hybrid_pusht_image
   wandb_name_base: 2023.01.16-20.20.06_train_diffusion_unet_hybrid_pusht_image
+
 n_action_steps: 8
 n_latency_steps: 0
 n_obs_steps: 2
@@ -51,9 +58,11 @@ optimizer:
   eps: 1.0e-08
   lr: 0.0001
   weight_decay: 1.0e-06
+
 past_action_visible: false
+
 policy:
-  _target_: diffusion_policy.policy.diffusion_unet_hybrid_image_policy.DiffusionUnetHybridImagePolicy
+  _target_: policies.diffusion_unet_hybrid_image_policy.DiffusionUnetHybridImagePolicy
   cond_predict_scale: true
   crop_shape:
   - 84
@@ -111,6 +120,7 @@ shape_meta:
       - 96
       - 96
       type: rgb
+
 task:
   dataset:
     _target_: diffusion_policy.dataset.pusht_image_dataset.PushTImageDataset
@@ -157,6 +167,7 @@ task:
         - 96
         type: rgb
 task_name: pusht_image
+
 training:
   checkpoint_every: 50
   debug: false
@@ -174,6 +185,7 @@ training:
   tqdm_interval_sec: 1.0
   use_ema: true
   val_every: 1
+  
 val_dataloader:
   batch_size: 64
   num_workers: 8

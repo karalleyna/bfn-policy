@@ -13,8 +13,9 @@ sys.stderr = open(sys.stderr.fileno(), mode="w", buffering=1)
 import pathlib
 
 import hydra
-from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from omegaconf import OmegaConf
+
+from workspaces.base import BaseWorkspace
 
 # allows arbitrary python code execution in configs using the ${eval:''} resolver
 OmegaConf.register_new_resolver("eval", eval, replace=True)
@@ -22,9 +23,7 @@ OmegaConf.register_new_resolver("eval", eval, replace=True)
 
 @hydra.main(
     version_base=None,
-    config_path=str(
-        pathlib.Path(__file__).parent.joinpath("diffusion_policy", "config")
-    ),
+    config_path=str(pathlib.Path(__file__).parent.joinpath("configs")),
 )
 def main(cfg: OmegaConf):
     # resolve immediately so all the ${now:} resolvers

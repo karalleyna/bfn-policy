@@ -4,7 +4,6 @@ Disabled auto-reset after done
 Added render method.
 """
 
-
 import multiprocessing as mp
 import sys
 import time
