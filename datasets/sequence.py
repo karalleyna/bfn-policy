@@ -3,10 +3,10 @@ from typing import Any, Dict
 import torch
 from torch.utils.data import Dataset
 
-from my_datasets.transformations.base import BaseTransform
-from my_datasets.utils.replay_buffer import ReplayBuffer
-from my_datasets.utils.sequence_sampler import SequenceSampler
-from my_models.my_normalizers.base import BaseNormalizer
+from datasets.transformations.base import BaseTransform
+from datasets.utils.replay_buffer import ReplayBuffer
+from datasets.utils.sequence_sampler import SequenceSampler
+from models.normalizers.base import BaseNormalizer
 from utils import dict_apply
 
 

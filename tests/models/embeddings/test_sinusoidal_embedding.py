@@ -5,9 +5,9 @@ import torch
 from torch import nn
 
 # Assuming the classes from your canvas are in a file named `my_embeddings.py`
-from my_models.my_embeddings.base import BaseEmbedding
-from my_models.my_embeddings.mlp import MLPEmbedding
-from my_models.my_embeddings.sinusoidal import SinusoidalTimestepEmbedding
+from models.embeddings.base import BaseEmbedding
+from models.embeddings.mlp import MLPEmbedding
+from models.embeddings.sinusoidal import SinusoidalTimestepEmbedding
 
 # =========================== Test Fixtures (Reusable Setups) ===========================
 

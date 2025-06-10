@@ -8,8 +8,8 @@ import pymunk
 import zarr
 from pymunk.vec2d import Vec2d
 
-from my_datasets.utils.replay_buffer import ReplayBuffer
-from my_environments.pusht import PushTEnv
+from datasets.utils.replay_buffer import ReplayBuffer
+from environments.pusht import PushTEnv
 
 
 def get_teleop_action(env: PushTEnv, is_teleop_active: bool) -> Tuple[np.ndarray, bool]:

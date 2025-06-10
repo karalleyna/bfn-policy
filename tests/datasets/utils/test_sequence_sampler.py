@@ -3,8 +3,8 @@ import pytest
 import torch
 import zarr
 
-from my_datasets.utils.replay_buffer import ReplayBuffer
-from my_datasets.utils.sequence_sampler import SequenceSampler
+from datasets.utils.replay_buffer import ReplayBuffer
+from datasets.utils.sequence_sampler import SequenceSampler
 
 # =========================== Test Fixtures (Reusable Setups) ===========================
 

@@ -2,7 +2,7 @@ import pytest
 import torch
 
 # Assuming the generator classes are in a file named `my_mask_generators.py`
-from my_models.my_mask_generators.dummy import DummyMaskGenerator
+from models.mask_generators.dummy import DummyMaskGenerator
 
 # =========================== Test Fixture (Reusable Setups) ===========================
 

@@ -3,7 +3,7 @@ from typing import Any, Dict
 import torch
 import torch.nn as nn
 
-from my_policies.diffusion.base import DiffusionPolicy
+from policies.diffusion.base import DiffusionPolicy
 from utils import dict_apply
 
 

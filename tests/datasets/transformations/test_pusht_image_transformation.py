@@ -3,7 +3,7 @@ from typing import Dict
 import numpy as np
 import pytest
 
-from my_datasets.transformations.pusht.image import PushTImageTransform
+from datasets.transformations.pusht.image import PushTImageTransform
 
 # =========================== Test Fixtures (Reusable Setups) ===========================
 

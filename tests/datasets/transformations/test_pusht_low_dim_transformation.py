@@ -3,7 +3,7 @@ from typing import Dict
 import numpy as np
 import pytest
 
-from my_datasets.transformations.pusht.low_dim import PushTLowDimTransform
+from datasets.transformations.pusht.low_dim import PushTLowDimTransform
 
 # =========================== Test Fixtures (Reusable Setups) ===========================
 

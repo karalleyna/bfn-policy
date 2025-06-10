@@ -2,7 +2,7 @@ import pytest
 import torch
 
 # Assuming the generator classes are in a file named `my_mask_generators.py`
-from my_models.my_mask_generators.low_dim import LowdimMaskGenerator
+from models.mask_generators.low_dim import LowdimMaskGenerator
 
 
 @pytest.fixture

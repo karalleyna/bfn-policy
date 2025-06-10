@@ -2,8 +2,8 @@ import click
 import numpy as np
 import pygame
 
+from datasets.utils.replay_buffer import ReplayBuffer
 from environments.pusht_keypoints import PushTKeypointsEnv
-from my_datasets.utils.replay_buffer import ReplayBuffer
 
 
 @click.command()

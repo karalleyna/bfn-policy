@@ -2,7 +2,7 @@ import math
 
 import torch
 
-from my_models.my_embeddings.base import BaseEmbedding
+from models.embeddings.base import BaseEmbedding
 
 
 class SinusoidalTimestepEmbedding(BaseEmbedding):

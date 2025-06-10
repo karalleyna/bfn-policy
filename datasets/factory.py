@@ -1,8 +1,8 @@
 from typing import Tuple
 
-from my_datasets.sequence import SequenceDataset
-from my_datasets.utils.replay_buffer import ReplayBuffer
-from my_datasets.utils.sequence_sampler import SequenceSampler
+from datasets.sequence import SequenceDataset
+from datasets.utils.replay_buffer import ReplayBuffer
+from datasets.utils.sequence_sampler import SequenceSampler
 
 
 def create_pusht_dataset(

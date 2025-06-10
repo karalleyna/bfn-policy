@@ -1,6 +1,6 @@
 import numpy as np
 
-from my_datasets.utils.replay_buffer import ReplayBuffer
+from datasets.utils.replay_buffer import ReplayBuffer
 
 
 class SequenceSampler:

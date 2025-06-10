@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 import torch
 
-from my_datasets.sequence import SequenceDataset
-from my_datasets.transformations.base import BaseTransform
+from datasets.sequence import SequenceDataset
+from datasets.transformations.base import BaseTransform
 
 # =========================== Mocks and Fakes (Test Doubles) ===========================
 # We create lightweight fake versions of the dependencies to isolate the

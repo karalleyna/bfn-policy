@@ -4,7 +4,7 @@ import pytest
 import torch
 
 # Assuming the generator classes are in a file named `my_mask_generators.py`
-from my_models.my_mask_generators.keypoint import KeypointMaskGenerator
+from models.mask_generators.keypoint import KeypointMaskGenerator
 
 # =========================== Test Fixture (Reusable Setups) ===========================
 

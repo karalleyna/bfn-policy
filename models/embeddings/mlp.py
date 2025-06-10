@@ -3,7 +3,7 @@ from typing import Tuple
 import torch
 from torch import nn
 
-from my_models.my_embeddings.base import BaseEmbedding
+from models.embeddings.base import BaseEmbedding
 
 
 class MLPEmbedding(BaseEmbedding):

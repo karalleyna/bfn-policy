@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 import torch
 
-from my_models.my_mask_generators.base import BaseMaskGenerator
+from models.mask_generators.base import BaseMaskGenerator
 
 
 class LowdimMaskGenerator(BaseMaskGenerator):

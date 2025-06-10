@@ -7,7 +7,7 @@ import pytest
 import zarr
 
 # Assuming the ReplayBuffer class is in a file named `my_dataset/replay_buffer.py`
-from my_datasets.utils.replay_buffer import ReplayBuffer
+from datasets.utils.replay_buffer import ReplayBuffer
 
 # =========================== Test Fixtures (Reusable Setups) ===========================
 

@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch import nn
 
-from my_models.ema import ExponentialMovingAverage
+from models.ema import ExponentialMovingAverage
 
 # =========================== Test Fixtures (Reusable Setups) ===========================
 

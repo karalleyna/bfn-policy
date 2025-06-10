@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from einops import reduce
 
-from my_policies.base import Policy
+from policies.base import Policy
 
 
 class DiffusionPolicy(Policy):
