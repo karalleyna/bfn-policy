@@ -5,8 +5,6 @@ import pytest
 
 from datasets.transformations.pusht.image import PushTImageTransform
 
-# =========================== Test Fixtures (Reusable Setups) ===========================
-
 
 @pytest.fixture
 def raw_pusht_sample() -> Dict[str, np.ndarray]:
@@ -21,9 +19,6 @@ def raw_pusht_sample() -> Dict[str, np.ndarray]:
         "keypoint": np.random.randn(sequence_length, 5, 2).astype(np.float32),
         "action": np.random.randn(sequence_length, 7).astype(np.float32),
     }
-
-
-# =========================== Unit Test Classes ===========================
 
 
 class TestPushTImageTransform:

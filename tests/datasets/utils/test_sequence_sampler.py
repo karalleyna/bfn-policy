@@ -1,12 +1,9 @@
 import numpy as np
 import pytest
-import torch
 import zarr
 
 from datasets.utils.replay_buffer import ReplayBuffer
 from datasets.utils.sequence_sampler import SequenceSampler
-
-# =========================== Test Fixtures (Reusable Setups) ===========================
 
 
 @pytest.fixture
@@ -20,25 +17,13 @@ def mock_replay_buffer() -> ReplayBuffer:
     store = zarr.storage.MemoryStore()
     root = zarr.group(store=store)
 
-    # --- FIX IS HERE ---
-    # Ensure every create_dataset call has a 'shape' argument.
-    # If providing data directly, shape is inferred, but it's better
-    # to be explicit or ensure the API matches. The error indicates
-    # 'shape' is mandatory in your environment.
-
-    # This creates a dataset of length 23 for dummy data.
     root.create_dataset("action", shape=(23,), dtype="f4")
 
     meta = root.create_group("meta")
 
-    # When providing data directly with the 'data' keyword, zarr infers the shape.
-    # The error suggests your call might be missing the `data=` part.
     meta.create_dataset("episode_ends", shape=(3,), data=np.array([10, 15, 23]))
 
     return ReplayBuffer(root)
-
-
-# =========================== Unit Test Class for SequenceSampler ===========================
 
 
 class TestSequenceSampler:

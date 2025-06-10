@@ -4,8 +4,6 @@ from torch import nn
 
 from models.ema import ExponentialMovingAverage
 
-# =========================== Test Fixtures (Reusable Setups) ===========================
-
 
 @pytest.fixture
 def simple_model() -> nn.Module:
@@ -19,9 +17,6 @@ def simple_model() -> nn.Module:
             self.register_buffer("running_mean", torch.zeros(10))
 
     return SimpleModel()
-
-
-# =========================== Unit Test Class ===========================
 
 
 class TestExponentialMovingAverage:

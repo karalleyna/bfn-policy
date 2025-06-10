@@ -2,15 +2,12 @@ import pytest
 import torch
 from torch import nn
 
-# Assuming the classes from your canvas are in a file named `unet1d_components.py`
 from models.unet1d_components import (
     Conv1dBlock,
     Downsample1d,
     ResidualBlock,
     Upsample1d,
 )
-
-# =========================== Test Fixtures (Reusable Setups) ===========================
 
 
 @pytest.fixture(params=[(4, 64, 32), (8, 128, 64)])  # (B, C, T)

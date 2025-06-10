@@ -2,7 +2,6 @@ import pytest
 import torch
 from torch import nn
 
-# Assuming the classes from your canvas are in a file named `my_embeddings.py`
 from models.embeddings.base import BaseEmbedding
 from models.embeddings.mlp import MLPEmbedding
 

@@ -6,10 +6,7 @@ import numpy as np
 import pytest
 import zarr
 
-# Assuming the ReplayBuffer class is in a file named `my_dataset/replay_buffer.py`
 from datasets.utils.replay_buffer import ReplayBuffer
-
-# =========================== Test Fixtures (Reusable Setups) ===========================
 
 
 @pytest.fixture
@@ -43,9 +40,6 @@ def populated_zarr_path(temp_dir_path: Path) -> str:
     # Also correcting the DeprecationWarning by using create_array for consistency
     meta.create_array("episode_ends", shape=(3,), fill_value=np.array([10, 15, 23]))
     return str(zarr_path)
-
-
-# =========================== Unit Test Class for ReplayBuffer ===========================
 
 
 class TestReplayBuffer:

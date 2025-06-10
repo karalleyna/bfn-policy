@@ -7,10 +7,6 @@ import torch
 from datasets.sequence import SequenceDataset
 from datasets.transformations.base import BaseTransform
 
-# =========================== Mocks and Fakes (Test Doubles) ===========================
-# We create lightweight fake versions of the dependencies to isolate the
-# SequenceDataset's logic for unit testing.
-
 
 class FakeReplayBuffer:
     """A fake ReplayBuffer that holds a small numpy array in memory."""
@@ -53,9 +49,6 @@ class FakeTransform(BaseTransform):
 
     def get_normalizer(self, replay_buffer) -> str:
         return "NormalizerWasCreated"
-
-
-# =========================== Unit Test Class for SequenceDataset ===========================
 
 
 class TestSequenceDataset:

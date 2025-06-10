@@ -5,8 +5,6 @@ import pytest
 
 from datasets.transformations.pusht.low_dim import PushTLowDimTransform
 
-# =========================== Test Fixtures (Reusable Setups) ===========================
-
 
 @pytest.fixture
 def raw_pusht_sample() -> Dict[str, np.ndarray]:

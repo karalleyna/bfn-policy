@@ -4,7 +4,6 @@ import pytest
 import torch
 
 from models.embeddings.base import BaseEmbedding
-from models.embeddings.mlp import MLPEmbedding
 from models.embeddings.sinusoidal import SinusoidalTimestepEmbedding
 
 
