@@ -6,13 +6,7 @@ from my_models.my_mask_generators.base import BaseMaskGenerator
 
 
 class LowdimMaskGenerator(BaseMaskGenerator):
-    """
-    Generates a mask for low-dimensional trajectories (obs, action).
-
-    This generator creates a mask where a certain number of initial observation
-    steps are marked as conditioned (visible). It can optionally also mark
-    past actions as visible.
-    """
+    """Generates a mask for low-dimensional trajectories (obs, action)."""
 
     def __init__(
         self,
@@ -62,6 +56,6 @@ class LowdimMaskGenerator(BaseMaskGenerator):
             action_time_mask = time_idxs < action_steps.unsqueeze(-1)
 
         obs_mask = obs_time_mask.unsqueeze(-1) & is_obs_dim
-        action_mask = action_time_mask.unsqueeze(-1) & is_action_dim
+        action_mask = action_time_mask.unsqueeze(-1) & is_action
 
         return obs_mask | action_mask

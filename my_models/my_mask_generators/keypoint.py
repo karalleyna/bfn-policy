@@ -6,10 +6,7 @@ from my_models.my_mask_generators.base import BaseMaskGenerator
 
 
 class KeypointMaskGenerator(BaseMaskGenerator):
-    """
-    Generates a complex mask for trajectories involving actions, keypoints,
-    and other context features.
-    """
+    """Generates a complex mask for trajectories involving keypoints."""
 
     def __init__(
         self,
@@ -41,12 +38,10 @@ class KeypointMaskGenerator(BaseMaskGenerator):
     ) -> torch.Tensor:
         B, T, D = shape
 
-        expected_d = (
-            self.action_dim + (self.n_keypoints * self.keypoint_dim) + self.context_dim
-        )
-        if D != expected_d:
+        keypoint_feature_dim = D - self.action_dim - self.context_dim
+        if keypoint_feature_dim % self.keypoint_dim != 0:
             raise ValueError(
-                f"Feature dimension D ({D}) does not match expected ({expected_d})."
+                "Total keypoint feature dim is not divisible by keypoint_dim."
             )
 
         is_action = torch.zeros(D, dtype=torch.bool, device=self.device)
@@ -55,7 +50,6 @@ class KeypointMaskGenerator(BaseMaskGenerator):
         is_context = torch.zeros(D, dtype=torch.bool, device=self.device)
         if self.context_dim > 0:
             is_context[-self.context_dim :] = True
-
         is_keypoint = ~(is_action | is_context)
 
         if self.fix_obs_steps:
@@ -83,8 +77,11 @@ class KeypointMaskGenerator(BaseMaskGenerator):
             action_time_mask = time_idxs < action_steps.unsqueeze(-1)
             final_mask |= action_time_mask.unsqueeze(-1) & is_action
 
-        keypoint_time_mask = time_idxs < obs_steps.unsqueeze(-1)
+        # --- LOGIC FIX IS HERE ---
+        # 1. Create the base time mask for all keypoints
+        keypoint_time_mask = time_idxs < obs_steps.unsqueeze(-1)  # Shape: (B, T)
 
+        # 2. If randomly masking, create a visibility mask for keypoint features
         if self.keypoint_visible_rate < 1.0:
             if self.time_independent_keypoints:
                 kp_vis_shape = (B, T, self.n_keypoints)
@@ -103,8 +100,12 @@ class KeypointMaskGenerator(BaseMaskGenerator):
             if not self.time_independent_keypoints:
                 visible_kp_dims = visible_kp_dims.unsqueeze(1)
 
-            keypoint_time_mask = keypoint_time_mask & visible_kp_dims
+            # 3. Combine time visibility with random feature visibility
+            # The unsqueeze is crucial for correct broadcasting.
+            keypoint_mask = keypoint_time_mask.unsqueeze(-1) & visible_kp_dims
+        else:
+            keypoint_mask = keypoint_time_mask.unsqueeze(-1)
 
-        final_mask |= keypoint_time_mask.unsqueeze(-1) & is_keypoint
-
+        # 4. Combine with the overall dimension mask
+        final_mask |= keypoint_mask & is_keypoint
         return final_mask

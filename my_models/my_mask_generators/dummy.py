@@ -6,11 +6,7 @@ from my_models.my_mask_generators.base import BaseMaskGenerator
 
 
 class DummyMaskGenerator(BaseMaskGenerator):
-    """
-    A simple generator that creates a mask where all elements are considered
-    conditioned (visible). This is useful for unconditional generation or
-    debugging.
-    """
+    """A simple generator that creates a mask where all elements are visible."""
 
     def forward(
         self, shape: Tuple[int, int, int], generator: Optional[torch.Generator] = None
