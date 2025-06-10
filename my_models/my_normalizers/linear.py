@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import zarr
 
-from my_normalizers.base import BaseNormalizer, DataSource
+from my_models.my_normalizers.base import BaseNormalizer, DataSource
 
 
 def _fit_linear(

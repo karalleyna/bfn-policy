@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 from my_datasets.transformations.base import BaseTransform
 from my_datasets.utils.replay_buffer import ReplayBuffer
 from my_datasets.utils.sequence_sampler import SequenceSampler
-from my_normalizers.base import BaseNormalizer
+from my_models.my_normalizers.base import BaseNormalizer
 from utils import dict_apply
 
 

@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from my_normalizers.linear import LinearNormalizer
+from my_models.my_normalizers.linear import LinearNormalizer
 
 
 @pytest.fixture

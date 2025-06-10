@@ -2,9 +2,9 @@ from typing import Dict
 
 import numpy as np
 
-from models.linear_normalizer import LinearNormalizer
 from my_datasets.transformations.base import BaseTransform
 from my_datasets.utils.replay_buffer import ReplayBuffer
+from my_models.my_normalizers.linear import LinearNormalizer
 
 
 class PushTImageTransform(BaseTransform):

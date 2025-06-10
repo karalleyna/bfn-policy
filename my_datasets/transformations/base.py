@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict
 import numpy as np
 
 from my_datasets.utils.replay_buffer import ReplayBuffer
-from my_normalizers.base import BaseNormalizer
+from my_models.my_normalizers.base import BaseNormalizer
 
 
 class BaseTransform(Callable):
