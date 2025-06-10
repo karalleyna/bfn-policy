@@ -12,10 +12,10 @@ import wandb.sdk.data_types.video as wv
 from environments.async_vector import AsyncVectorEnv
 from environments.pusht_keypoints import PushTKeypointsEnv
 from policies.base_lowdim_policy import BaseLowdimPolicy
+from prev_utils.multistep_wrapper import MultiStepWrapper
+from prev_utils.pytorch import dict_apply
+from prev_utils.video_recording_wrapper import VideoRecorder, VideoRecordingWrapper
 from runners.base import BaseRunner
-from utils.multistep_wrapper import MultiStepWrapper
-from utils.pytorch import dict_apply
-from utils.video_recording_wrapper import VideoRecorder, VideoRecordingWrapper
 
 
 class PushTKeypointsRunner(BaseRunner):

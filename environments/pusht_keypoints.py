@@ -4,7 +4,7 @@ import numpy as np
 from gymnasium import spaces
 
 from environments.pusht_base import PushTEnv
-from utils.pymunk_keypoint_manager import PymunkKeypointManager
+from prev_utils.pymunk_keypoint_manager import PymunkKeypointManager
 
 
 class PushTKeypointsEnv(PushTEnv):

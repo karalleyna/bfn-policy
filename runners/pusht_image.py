@@ -12,12 +12,12 @@ import wandb.sdk.data_types.video as wv
 from environments.async_vector import AsyncVectorEnv
 from environments.pusht_clean import PushTImageEnv
 from policies.base import BaseImagePolicy
-from runners.base import BaseRunner
 
 # from diffusion_policy.gym_util.sync_vector_env import SyncVectorEnv
-from utils.multistep_wrapper import MultiStepWrapper
-from utils.pytorch import dict_apply
-from utils.video_recording_wrapper import VideoRecorder, VideoRecordingWrapper
+from prev_utils.multistep_wrapper import MultiStepWrapper
+from prev_utils.pytorch import dict_apply
+from prev_utils.video_recording_wrapper import VideoRecorder, VideoRecordingWrapper
+from runners.base import BaseRunner
 
 
 class PushTImageRunner(BaseRunner):

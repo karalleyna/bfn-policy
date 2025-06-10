@@ -11,7 +11,7 @@ import skimage.transform as st
 from gymnasium import spaces
 from pymunk.vec2d import Vec2d
 
-from utils.pymunk_override import DrawOptions
+from prev_utils.pymunk_override import DrawOptions
 
 
 def pymunk_to_shapely(body, shapes):

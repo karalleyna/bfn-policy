@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import OmegaConf
 
-import utils.checkpoints as checkpoint_util
+import prev_utils.checkpoints as checkpoint_util
 
 
 class BaseWorkspace:

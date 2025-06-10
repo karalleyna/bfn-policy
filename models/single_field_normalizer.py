@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 import zarr
 
-from utils.dict_of_tensor_mixin import DictOfTensorMixin
-from utils.pytorch import dict_apply
+from prev_utils.dict_of_tensor_mixin import DictOfTensorMixin
+from prev_utils.pytorch import dict_apply
 
 
 class SingleFieldLinearNormalizer(DictOfTensorMixin):

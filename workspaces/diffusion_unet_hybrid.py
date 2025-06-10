@@ -26,10 +26,10 @@ from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 
 # Project-specific modules
-from utils.checkpoints import TopKCheckpointManager
-from utils.logging import JsonLogger
-from utils.lr_scheduler import get_scheduler
-from utils.pytorch import dict_apply, optimizer_to
+from prev_utils.checkpoints import TopKCheckpointManager
+from prev_utils.logging import JsonLogger
+from prev_utils.lr_scheduler import get_scheduler
+from prev_utils.pytorch import dict_apply, optimizer_to
 from workspaces.base import BaseWorkspace
 
 OmegaConf.register_new_resolver("eval", eval, replace=True)

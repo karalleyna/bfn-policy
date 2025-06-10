@@ -9,10 +9,10 @@ import torch
 
 # Project-specific imports
 from datasets.base import BaseDataset
-from utils.normalizer import LinearNormalizer, get_image_range_normalizer
-from utils.pytorch import dict_apply
-from utils.replay_buffer import ReplayBuffer
-from utils.sampler import SequenceSampler, downsample_mask, get_val_mask
+from prev_utils.normalizer import LinearNormalizer, get_image_range_normalizer
+from prev_utils.pytorch import dict_apply
+from prev_utils.replay_buffer import ReplayBuffer
+from prev_utils.sampler import SequenceSampler, downsample_mask, get_val_mask
 
 
 # Abstract base class for PushT dataset

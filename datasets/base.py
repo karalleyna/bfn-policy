@@ -4,7 +4,7 @@ from typing import Dict, Union
 import torch
 from torch.utils.data import Dataset as TorchDataset
 
-from utils.normalizer import LinearNormalizer
+from my_normalizers.base import BaseNormalizer
 
 
 class BaseDataset(TorchDataset, ABC):
@@ -21,7 +21,7 @@ class BaseDataset(TorchDataset, ABC):
         pass
 
     @abstractmethod
-    def get_normalizer(self, **kwargs) -> LinearNormalizer:
+    def get_normalizer(self, **kwargs) -> BaseNormalizer:
         """
         Returns a fitted normalizer for the dataset.
         """
