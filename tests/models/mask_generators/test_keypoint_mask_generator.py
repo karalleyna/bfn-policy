@@ -29,10 +29,14 @@ class TestKeypointMaskGenerator:
 
     @pytest.fixture
     def keypoint_config(self) -> Dict[str, Any]:
-        """Provides a standard configuration for the keypoint generator."""
+        """
+        Provides a standard configuration for the keypoint generator.
+        FIX: Added the missing 'n_keypoints' argument.
+        """
         return {
             "action_dim": 7,
             "keypoint_dim": 2,
+            "n_keypoints": 5,  # The missing argument
             "max_n_obs_steps": 3,
             "context_dim": 4,
             "n_context_steps": 1,
@@ -41,11 +45,9 @@ class TestKeypointMaskGenerator:
     @pytest.fixture
     def keypoint_shape(self, keypoint_config) -> tuple:
         """Calculates the trajectory shape based on the config."""
-        # Assuming 5 keypoints for this test
-        n_keypoints = 5
         D = (
             keypoint_config["action_dim"]
-            + (n_keypoints * keypoint_config["keypoint_dim"])
+            + (keypoint_config["n_keypoints"] * keypoint_config["keypoint_dim"])
             + keypoint_config["context_dim"]
         )
         return (4, 16, D)  # B, T, D
@@ -68,7 +70,11 @@ class TestKeypointMaskGenerator:
         assert not torch.any(mask[:, n_context_steps:, -context_dim:]).item()
 
         # Keypoints (obs) should be visible for the first `n_obs_steps`
-        obs_mask_part = mask[:, :, action_dim:-context_dim]
+        obs_mask_part = (
+            mask[:, :, action_dim:-context_dim]
+            if context_dim > 0
+            else mask[:, :, action_dim:]
+        )
         assert torch.all(obs_mask_part[:, :n_obs_steps, :]).item()
         assert not torch.any(obs_mask_part[:, n_obs_steps:, :]).item()
 
@@ -85,16 +91,17 @@ class TestKeypointMaskGenerator:
         )
         mask = gen(keypoint_shape, generator=generator)
 
-        # Get the keypoint part of the mask for the first two obs steps
-        obs_mask_part = mask[
-            0, :2, keypoint_config["action_dim"] : -keypoint_config["context_dim"]
-        ]
+        action_dim = keypoint_config["action_dim"]
+        context_dim = keypoint_config["context_dim"]
 
-        # Check that the number of visible keypoints is not zero or all (probabilistic)
+        obs_mask_part = (
+            mask[0, :2, action_dim:-context_dim]
+            if context_dim > 0
+            else mask[0, :2, action_dim:]
+        )
+
         assert torch.any(obs_mask_part).item()
         assert not torch.all(obs_mask_part).item()
-
-        # Check that the mask for T=0 is different from T=1
         assert not torch.all(obs_mask_part[0] == obs_mask_part[1]).item()
 
     def test_keypoint_time_constant_masking(
@@ -110,10 +117,13 @@ class TestKeypointMaskGenerator:
         )
         mask = gen(keypoint_shape, generator=generator)
 
-        # Get the keypoint part of the mask for the first two obs steps
-        obs_mask_part = mask[
-            0, :2, keypoint_config["action_dim"] : -keypoint_config["context_dim"]
-        ]
+        action_dim = keypoint_config["action_dim"]
+        context_dim = keypoint_config["context_dim"]
 
-        # Check that the mask for T=0 is IDENTICAL to T=1
+        obs_mask_part = (
+            mask[0, :2, action_dim:-context_dim]
+            if context_dim > 0
+            else mask[0, :2, action_dim:]
+        )
+
         torch.testing.assert_close(obs_mask_part[0], obs_mask_part[1])

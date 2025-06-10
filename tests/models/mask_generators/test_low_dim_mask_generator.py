@@ -78,6 +78,7 @@ class TestLowdimMaskGenerator:
         """
         Tests that with fix_obs_steps=False, the number of visible observation
         steps varies per batch element but stays within the valid range.
+        This test is now deterministic.
         """
         B, T, D = shape
         action_dim, obs_dim = 7, 10
@@ -91,16 +92,18 @@ class TestLowdimMaskGenerator:
         )
         mask = gen(shape, generator=generator)
 
-        # For each item in the batch, find the number of visible obs steps
-        # by checking the last True value along the time dimension.
+        # For a fixed seed, we can predict the exact random values.
+        # This is more robust than just checking if they are different.
+        torch.manual_seed(42)  # Reset seed for comparison
+        expected_obs_steps = torch.randint(
+            low=1, high=max_n_obs_steps + 1, size=(B,), generator=generator
+        )
+
         obs_part = mask[:, :, action_dim:]
         num_visible_steps = (torch.cumsum(obs_part, dim=1) > 0).sum(dim=1)[:, 0]
 
-        # Assert that all calculated step counts are between 1 and max_n_obs_steps
-        assert torch.all(num_visible_steps >= 1).item()
-        assert torch.all(num_visible_steps <= max_n_obs_steps).item()
-        # Assert that not all are the same (probabilistically, for this seed)
-        assert len(torch.unique(num_visible_steps)) > 1
+        # Assert that the generated number of steps matches the expected sequence.
+        torch.testing.assert_close(num_visible_steps, expected_obs_steps)
 
     def test_dimension_mismatch_error(self):
         """Tests that a ValueError is raised if D != action_dim + obs_dim."""
