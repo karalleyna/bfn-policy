@@ -1,7 +1,8 @@
 from typing import Optional, Tuple
 
 import torch
-from my_mask_generators.base import BaseMaskGenerator
+
+from my_models.my_mask_generators.base import BaseMaskGenerator
 
 
 class KeypointMaskGenerator(BaseMaskGenerator):
