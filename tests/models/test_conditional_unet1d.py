@@ -12,6 +12,9 @@ def device() -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+# =========================== Unit Test Classes ===========================
+
+
 class TestConditionalResidualBlock1D:
     """A suite of unit tests for the ConditionalResidualBlock1D class."""
 
@@ -45,7 +48,6 @@ class TestConditionalResidualBlock1D:
             **resblock_config, cond_predict_scale=True
         ).to(device)
 
-        # Check that the FiLM projection layer has the correct output dimension (2 * out_channels)
         expected_film_dim = resblock_config["out_channels"] * 2
         assert block.film_projection[-1].out_features == expected_film_dim
 
@@ -55,7 +57,6 @@ class TestConditionalResidualBlock1D:
             **resblock_config, cond_predict_scale=False
         ).to(device)
 
-        # Check that the FiLM projection layer has the correct output dimension (out_channels)
         expected_film_dim = resblock_config["out_channels"]
         assert block.film_projection[-1].out_features == expected_film_dim
 
@@ -65,11 +66,18 @@ class TestConditionalUnet1D:
 
     @pytest.fixture
     def unet_config(self) -> Dict[str, Any]:
-        """Provides a standard configuration for the U-Net model."""
+        """
+        Provides a standard configuration for the U-Net model.
+        FIX: Changed input_dim from 10 to 16 to be divisible by n_groups=8.
+        Made other parameters explicit for clarity.
+        """
         return {
-            "input_dim": 10,
+            "input_dim": 16,  # Must be divisible by n_groups
             "global_cond_dim": 64,
-            "down_dims": [256, 512],
+            "down_dims": [256, 512],  # Must be divisible by n_groups
+            "kernel_size": 3,
+            "n_groups": 8,
+            "cond_predict_scale": True,
         }
 
     @pytest.fixture
@@ -91,8 +99,7 @@ class TestConditionalUnet1D:
     def test_forward_pass_output_shape(self, unet_config, sample_data, device):
         """
         Tests that a full forward pass runs without errors and produces an output
-        tensor of the same shape as the input sample. This is the primary
-        integration test for the whole model.
+        tensor of the same shape as the input sample.
         """
         model = ConditionalUnet1D(**unet_config).to(device)
 
@@ -106,16 +113,13 @@ class TestConditionalUnet1D:
         Tests that the model works correctly when the optional `global_cond`
         is not provided.
         """
-        # Create a model with global_cond_dim=0 to signify no global conditioning
         config = unet_config.copy()
         config["global_cond_dim"] = 0
         model = ConditionalUnet1D(**config).to(device)
 
-        # Remove global_cond from the input data
         data = sample_data.copy()
         data.pop("global_cond")
 
-        # The forward pass should run without errors
         try:
             output = model(**data)
             assert output.shape == data["sample"].shape
@@ -131,12 +135,10 @@ class TestConditionalUnet1D:
         model = ConditionalUnet1D(**unet_config).to(device)
         data = sample_data.copy()
 
-        # Test with a scalar integer
         data["timestep"] = 99
         output_int = model(**data)
         assert output_int.shape == data["sample"].shape
 
-        # Test with a scalar float
         data["timestep"] = 99.0
         output_float = model(**data)
         assert output_float.shape == data["sample"].shape
@@ -146,8 +148,6 @@ class TestConditionalUnet1D:
         """
         Tests that the entire U-Net model can be moved to a CUDA device.
         """
-        # This test primarily checks if the model's .to(device) call works, which
-        # implies all submodules and their parameters/buffers are moved correctly.
         model = ConditionalUnet1D(**unet_config)
 
         try:
