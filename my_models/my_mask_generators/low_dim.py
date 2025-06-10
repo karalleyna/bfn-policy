@@ -56,6 +56,7 @@ class LowdimMaskGenerator(BaseMaskGenerator):
             action_time_mask = time_idxs < action_steps.unsqueeze(-1)
 
         obs_mask = obs_time_mask.unsqueeze(-1) & is_obs_dim
-        action_mask = action_time_mask.unsqueeze(-1) & is_action
+        # --- FIX IS HERE: Corrected variable name from `is_action` to `is_action_dim` ---
+        action_mask = action_time_mask.unsqueeze(-1) & is_action_dim
 
         return obs_mask | action_mask

@@ -39,10 +39,8 @@ class KeypointMaskGenerator(BaseMaskGenerator):
         B, T, D = shape
 
         keypoint_feature_dim = D - self.action_dim - self.context_dim
-        if keypoint_feature_dim % self.keypoint_dim != 0:
-            raise ValueError(
-                "Total keypoint feature dim is not divisible by keypoint_dim."
-            )
+        if keypoint_feature_dim != (self.n_keypoints * self.keypoint_dim):
+            raise ValueError("Dimension mismatch for keypoints.")
 
         is_action = torch.zeros(D, dtype=torch.bool, device=self.device)
         is_action[: self.action_dim] = True
@@ -78,10 +76,13 @@ class KeypointMaskGenerator(BaseMaskGenerator):
             final_mask |= action_time_mask.unsqueeze(-1) & is_action
 
         # --- LOGIC FIX IS HERE ---
-        # 1. Create the base time mask for all keypoints
-        keypoint_time_mask = time_idxs < obs_steps.unsqueeze(-1)  # Shape: (B, T)
+        # Create a visibility mask for the keypoint feature dimensions specifically
+        obs_time_mask = time_idxs < obs_steps.unsqueeze(-1)
 
-        # 2. If randomly masking, create a visibility mask for keypoint features
+        kp_visibility_mask = obs_time_mask.unsqueeze(-1).expand(
+            -1, -1, keypoint_feature_dim
+        )
+
         if self.keypoint_visible_rate < 1.0:
             if self.time_independent_keypoints:
                 kp_vis_shape = (B, T, self.n_keypoints)
@@ -100,12 +101,11 @@ class KeypointMaskGenerator(BaseMaskGenerator):
             if not self.time_independent_keypoints:
                 visible_kp_dims = visible_kp_dims.unsqueeze(1)
 
-            # 3. Combine time visibility with random feature visibility
-            # The unsqueeze is crucial for correct broadcasting.
-            keypoint_mask = keypoint_time_mask.unsqueeze(-1) & visible_kp_dims
-        else:
-            keypoint_mask = keypoint_time_mask.unsqueeze(-1)
+            kp_visibility_mask = kp_visibility_mask & visible_kp_dims
 
-        # 4. Combine with the overall dimension mask
-        final_mask |= keypoint_mask & is_keypoint
+        # Place the keypoint mask into the correct slice of the final mask
+        kp_start_idx = self.action_dim
+        kp_end_idx = D - self.context_dim
+        final_mask[:, :, kp_start_idx:kp_end_idx] |= kp_visibility_mask
+
         return final_mask
