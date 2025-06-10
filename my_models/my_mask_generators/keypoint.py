@@ -1,7 +1,6 @@
 from typing import Optional, Tuple
 
 import torch
-
 from my_mask_generators.base import BaseMaskGenerator
 
 
