@@ -18,7 +18,7 @@ class PushTConfig:
     # --- Simulation Parameters ---
     sim_hz: int = 100
     control_hz: int = 10
-    damping: float = 0.1
+    damping: float = 0.0  # Reverted to original value
     pd_k_p: float = 100.0
     pd_k_v: float = 20.0
 
@@ -27,7 +27,7 @@ class PushTConfig:
     agent_radius: float = 15.0
     block_scale: float = 30.0
     block_mass: float = 1.0
-    block_friction: float = 0.7  # Added friction parameter
+    block_friction: float = 0.0  # Reverted to original (effectively frictionless)
     wall_thickness: float = 2.0
     goal_pose: np.ndarray = field(
         default_factory=lambda: np.array([256.0, 256.0, np.pi / 4.0])
