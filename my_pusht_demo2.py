@@ -9,9 +9,9 @@ import zarr
 from pymunk.vec2d import Vec2d
 
 from datasets.utils.replay_buffer import ReplayBuffer
-from environments.pusht_keypoints import PushTKeypointsEnv
 
-# Make sure to import the keypoints environment
+# Import the new keypoints environment
+from environments.pusht.environment import PushTKeypointsEnv
 
 
 def get_teleop_action(
@@ -21,18 +21,15 @@ def get_teleop_action(
     Gets a teleoperation action from the mouse position.
     """
     action = None
-    # env.screen is the pygame.Surface, which is needed for coordinate conversion
-    if env.screen is not None:
+    if env.renderer.window is not None:
         mouse_pos_pixels = pygame.mouse.get_pos()
-        # Convert from pygame screen coordinates to pymunk space coordinates
         mouse_pos_pymunk = pymunk.pygame_util.from_pygame(
-            Vec2d(*mouse_pos_pixels), env.screen
+            Vec2d(*mouse_pos_pixels), env.renderer.window
         )
-        agent_pos = env.agent.position
+        agent_pos = env.simulator.agent.position
         dist_to_agent = (mouse_pos_pymunk - agent_pos).length
 
-        # Agent radius in the diffusion_policy env is 15
-        if not is_teleop_active and dist_to_agent < 15:
+        if not is_teleop_active and dist_to_agent < env.config.agent_radius:
             is_teleop_active = True
 
         if is_teleop_active:
@@ -44,6 +41,18 @@ def get_teleop_action(
 @click.command(
     help="""
     Collect human demonstrations for the Push-T task using the Keypoints Environment.
+    
+    \b
+    Usage:
+    python my_pusht_demo.py -o ./data/pusht_keypoints_demo.zarr
+
+    \b
+    Controls:
+    - Hover mouse near the blue agent to start controlling it.
+    - Push the gray T-block into the green goal area.
+    - Press 'R' to restart the episode.
+    - Press 'Q' to quit the application.
+    - Hold 'SPACE' to pause the data recording.
     """
 )
 @click.option("-o", "--output", required=True, help="Path to the output Zarr file.")
@@ -62,9 +71,13 @@ def main(output, render_size, control_hz):
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     replay_buffer = ReplayBuffer.from_path(output_path, mode="a")
-
-    env = PushTKeypointsEnv(render_size=render_size, draw_keypoints=True)
-    env.control_hz = control_hz
+    # =========================================================================
+    # Instantiate the new PushTKeypointsEnv
+    # We set draw_keypoints=True to visualize them during data collection.
+    # =========================================================================
+    env = PushTKeypointsEnv(
+        render_mode="human", render_size=render_size, draw_keypoints=True
+    )
 
     print("Instructions: Control the blue agent with your mouse.")
     print("Push the gray T-block into the green area.")
@@ -76,19 +89,14 @@ def main(output, render_size, control_hz):
         seed = replay_buffer.n_episodes
         print(f"--- Starting new episode (seed: {seed}) ---")
 
-        obs = env.reset()
-        # =================================================================
-        # FIX: Initial render must be in "human" mode to create the window
-        # before the event loop starts.
-        # =================================================================
-        img = env.render(mode="human")
+        obs, info = env.reset(seed=seed)
+        img = env.render()
 
         is_teleop_active = False
         is_paused = False
         is_retry = False
 
         while True:
-            # Handle PyGame events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     is_running = False
@@ -114,19 +122,15 @@ def main(output, render_size, control_hz):
 
             action, is_teleop_active = get_teleop_action(env, is_teleop_active)
 
+            # Ensure we always step with a valid action
             action_to_step = (
-                action if action is not None else np.array(env.agent.position)
+                action if action is not None else np.array(env.simulator.agent.position)
             )
+            next_obs, reward, done, truncated, info = env.step(action_to_step)
+            next_img = env.render()
 
-            next_obs, reward, done, info = env.step(action_to_step)
-            # =================================================================
-            # FIX: Subsequent renders should also be in "human" mode so the
-            # user can see the environment update. The render method returns
-            # the image array even in human mode.
-            # =================================================================
-            next_img = env.render(mode="human")
-
-            if is_teleop_active and action is not None and img is not None:
+            # Only record data when the mouse is controlling the agent
+            if is_teleop_active and action is not None:
                 data_step = {
                     "obs": obs,
                     "img": img,

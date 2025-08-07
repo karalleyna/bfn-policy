@@ -9,7 +9,7 @@ import zarr
 from pymunk.vec2d import Vec2d
 
 from datasets.utils.replay_buffer import ReplayBuffer
-from environments.pusht import PushTEnv
+from environments.pusht.environment import PushTEnv
 
 
 def get_teleop_action(env: PushTEnv, is_teleop_active: bool) -> Tuple[np.ndarray, bool]:
@@ -27,11 +27,11 @@ def get_teleop_action(env: PushTEnv, is_teleop_active: bool) -> Tuple[np.ndarray
     action = None
     mouse_pos_pixels = pygame.mouse.get_pos()
 
-    if env.window is not None:
+    if env.renderer.window is not None:
         mouse_pos_pymunk = pymunk.pygame_util.from_pygame(
-            Vec2d(*mouse_pos_pixels), env.window
+            Vec2d(*mouse_pos_pixels), env.renderer.window
         )
-        agent_pos = env.agent.position
+        agent_pos = env.position
         dist_to_agent = (mouse_pos_pymunk - agent_pos).length
 
         if not is_teleop_active and dist_to_agent < 15:  # agent radius
