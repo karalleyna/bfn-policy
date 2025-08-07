@@ -14,19 +14,14 @@ Key Components:
   - PushTEnv: The main Gymnasium environment class that orchestrates the
     simulation and rendering components.
 """
-import abc
 import dataclasses
 from typing import Any, Dict, List, Optional, Tuple
 
-import cv2
 import gymnasium as gym
 import numpy as np
-import pygame
 import pymunk
-import pymunk.pygame_util
 import shapely.geometry as sg
 from gymnasium import spaces
-from pymunk.vec2d import Vec2d
 
 from env_configs.pusht import PushTConfig
 from renderers.pusht import PushTRenderer
@@ -119,10 +114,10 @@ class PushTEnv(gym.Env):
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[Dict[str, Any]] = None
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
-        """Resets the environment to a new random initial state."""
+        """Resets the environment to a new valid initial state."""
         super().reset(seed=seed)
-        initial_state = self.observation_space.sample()
-        self.simulator.set_state(initial_state)
+        # Re-initialize the simulator to reset the agent and block to their valid starting positions.
+        self.simulator = PushTPhysicsSimulator(self.config)
         obs = self._get_obs()
         info = self._get_info()
         return obs, info

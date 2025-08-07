@@ -127,7 +127,7 @@ def main(output, render_size, control_hz):
             next_obs, reward, done, truncated, info = env.step(action_to_step)
             next_img = env.render()
 
-            if is_teleop_active:
+            if is_teleop_active and action is not None:
                 data_step = {
                     "obs": obs,
                     "img": img,
