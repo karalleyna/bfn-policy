@@ -1,204 +1,276 @@
-"""A Gymnasium environment for the Push-T task.
-
-This file defines the Push-T environment, which involves a kinematic pusher
-(agent) attempting to push a T-shaped block to a target goal pose.
-
-The implementation is modular, separating the physics simulation, rendering,
-and the main environment logic into distinct classes. This approach promotes
-code reuse, testability, and clarity.
-
-Key Components:
-  - PushTConfig: A dataclass to manage all simulation and environment constants.
-  - PushTPhysicsSimulator: Handles all Pymunk physics calculations.
-  - PushTRenderer: Manages all PyGame-based rendering.
-  - PushTEnv: The main Gymnasium environment class that orchestrates the
-    simulation and rendering components.
 """
-import dataclasses
-from typing import Any, Dict, List, Optional, Tuple
+This file contains the PushTEnv from the diffusion_policy repository,
+along with a custom PushTKeypointsEnv that inherits from it to provide
+keypoint-based observations.
+"""
+import collections
+from typing import Dict
 
-import gymnasium as gym
+import cv2
+import gym
 import numpy as np
+import pygame
 import pymunk
+import pymunk.pygame_util
 import shapely.geometry as sg
-from gymnasium import spaces
+from gym import spaces
+from pymunk.pygame_util import DrawOptions
+from pymunk.vec2d import Vec2d
 
-from env_configs.pusht import PushTConfig
-from renderers.pusht import PushTRenderer
-from simulators.pusht import PushTPhysicsSimulator
+
+def pymunk_to_shapely(body, shapes):
+    """
+    Converts a Pymunk body's shapes into a single Shapely MultiPolygon.
+    """
+    geoms = list()
+    for shape in shapes:
+        if isinstance(shape, pymunk.Poly):
+            verts = [body.local_to_world(v) for v in shape.get_vertices()]
+            verts += [verts[0]]
+            geoms.append(sg.Polygon(verts))
+        else:
+            pass
+    geom = sg.MultiPolygon(geoms)
+    return geom
 
 
 class PushTEnv(gym.Env):
-    """The main Push-T environment, orchestrating simulation and rendering.
-
-    This class implements the Gymnasium API, combining the physics simulator
-    and renderer to create a fully functional reinforcement learning environment.
+    """
+    PushTEnv from the diffusion_policy repository.
     """
 
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 10}
+    metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 10}
+    reward_range = (0.0, 1.0)
 
     def __init__(
         self,
-        render_mode: Optional[str] = None,
-        config: Optional[PushTConfig] = None,
-        **kwargs,
+        legacy=False,
+        block_cog=None,
+        damping=None,
+        render_action=True,
+        render_size=96,
+        reset_to_state=None,
     ):
-        """Initializes the Push-T environment.
+        self._seed = None
+        self.seed()
+        self.window_size = ws = 512
+        self.render_size = render_size
+        self.sim_hz = 100
+        self.k_p, self.k_v = 100, 20
+        self.control_hz = self.metadata["video.frames_per_second"]
+        self.legacy = legacy
 
-        Args:
-          render_mode: The rendering mode ('human' or 'rgb_array').
-          config: An optional configuration object. If None, a default
-            PushTConfig is created.
-          **kwargs: Keyword arguments to override fields in the config.
-            For example, `render_size=128`. These are case-insensitive.
-        """
-        super().__init__()
-        # Get the set of valid field names from the config dataclass.
-        config_fields = {f.name for f in dataclasses.fields(PushTConfig)}
-
-        # Filter and map kwargs to valid, uppercase config field names.
-        override_kwargs = {}
-        for key, value in kwargs.items():
-            if key.lower() in config_fields:
-                override_kwargs[key.lower()] = value
-            else:
-                # Raise an error for unexpected arguments, just like Python's
-                # default behavior. This prevents silent errors.
-                raise TypeError(
-                    f"PushTEnv.__init__() got an unexpected keyword argument '{key}'"
-                )
-
-        # Start with a base config, either the one provided or a default one.
-        base_config = config if config is not None else PushTConfig()
-
-        # Create the final config by applying the overrides.
-        self.config = dataclasses.replace(base_config, **override_kwargs)
-
-        # The rest of the initialization proceeds with the final config.
-        self.simulator = PushTPhysicsSimulator(self.config)
-        self.renderer = PushTRenderer(self.config)
-
-        self._goal_geom = self._precompute_goal_geometry()
-        self.render_mode = render_mode
-
-        # Define observation space: [agent_x, agent_y, block_x, block_y, block_angle]
-        ws = self.config.window_size
         self.observation_space = spaces.Box(
-            low=np.array([0, 0, 0, 0, 0], dtype=np.float32),
-            high=np.array([ws, ws, ws, ws, 2 * np.pi], dtype=np.float32),
+            low=np.array([0, 0, 0, 0, 0], dtype=np.float64),
+            high=np.array([ws, ws, ws, ws, np.pi * 2], dtype=np.float64),
             shape=(5,),
-            dtype=np.float32,
+            dtype=np.float64,
         )
-
-        # Define action space: [target_agent_x, target_agent_y]
         self.action_space = spaces.Box(
-            low=np.array([0, 0], dtype=np.float32),
-            high=np.array([ws, ws], dtype=np.float32),
+            low=np.array([0, 0], dtype=np.float64),
+            high=np.array([ws, ws], dtype=np.float64),
             shape=(2,),
-            dtype=np.float32,
+            dtype=np.float64,
         )
 
-    def _precompute_goal_geometry(self) -> sg.MultiPolygon:
-        """Pre-computes the Shapely geometry for the goal region.
+        self.block_cog = block_cog
+        self.damping = damping
+        self.render_action = render_action
+        self.window = None
+        self.clock = None
+        self.screen = None
+        self.space = None
+        self.teleop = False
+        self.latest_action = None
+        self.reset_to_state = reset_to_state
+        self._setup()
 
-        This avoids redundant calculations during the reward computation.
+    def reset(self):
+        self._setup()
+        if self.block_cog is not None:
+            self.block.center_of_gravity = self.block_cog
+        if self.damping is not None:
+            self.space.damping = self.damping
 
-        Returns:
-          A Shapely MultiPolygon representing the goal area.
-        """
-        goal_body = pymunk.Body(body_type=pymunk.Body.STATIC)
-        goal_body.position = self.config.goal_pose[:2]
-        goal_body.angle = self.config.goal_pose[2]
-        return self._pymunk_to_shapely(goal_body, self.simulator.block.shapes)
-
-    def reset(
-        self, *, seed: Optional[int] = None, options: Optional[Dict[str, Any]] = None
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
-        """Resets the environment to a new valid initial state."""
-        super().reset(seed=seed)
-        # Re-initialize the simulator to reset the agent and block to their valid starting positions.
-        self.simulator = PushTPhysicsSimulator(self.config)
-        obs = self._get_obs()
-        info = self._get_info()
-        return obs, info
-
-    def step(
-        self, action: np.ndarray
-    ) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        """Executes one time step in the environment."""
-        self.simulator.step(action)
-        obs = self._get_obs()
-        reward, done = self._calculate_reward()
-        info = self._get_info()
-        terminated = done
-        truncated = False  # This environment does not have a time limit.
-        return obs, reward, terminated, truncated, info
-
-    def render(self) -> Optional[np.ndarray]:
-        """Renders the environment."""
-        if self.render_mode is None:
-            gym.logger.warn(
-                "You are calling render method without specifying any render mode. "
-                "You can specify the render_mode at initialization, "
-                'e.g. `gym.make("PushT", render_mode="human")`'
+        state = self.reset_to_state
+        if state is None:
+            state = np.array(
+                [
+                    self.np_random.integers(50, 450),
+                    self.np_random.integers(50, 450),
+                    self.np_random.integers(100, 400),
+                    self.np_random.integers(100, 400),
+                    self.np_random.uniform(low=-np.pi, high=np.pi),
+                ]
             )
-            return None
+        self._set_state(state)
+        return self._get_obs()
 
-        sim_state = self.simulator.get_state_dict()
-        return self.renderer.render_frame(sim_state, self.render_mode)
+    def step(self, action):
+        dt = 1.0 / self.sim_hz
+        n_steps = self.sim_hz // self.control_hz
+        if action is not None:
+            self.latest_action = action
+            for _ in range(n_steps):
+                acceleration = self.k_p * (action - self.agent.position) + self.k_v * (
+                    Vec2d(0, 0) - self.agent.velocity
+                )
+                self.agent.velocity += acceleration * dt
+                self.space.step(dt)
+
+        goal_body = self._get_goal_pose_body(self.goal_pose)
+        goal_geom = pymunk_to_shapely(goal_body, self.block.shapes)
+        block_geom = pymunk_to_shapely(self.block, self.block.shapes)
+
+        intersection_area = goal_geom.intersection(block_geom).area
+        goal_area = goal_geom.area
+        coverage = intersection_area / goal_area if goal_area > 0 else 0
+        reward = np.clip(coverage / self.success_threshold, 0, 1)
+        done = coverage > self.success_threshold
+
+        return self._get_obs(), reward, done, self._get_info()
+
+    def render(self, mode="human"):
+        return self._render_frame(mode)
+
+    def _get_obs(self):
+        return np.array(
+            tuple(self.agent.position)
+            + tuple(self.block.position)
+            + (self.block.angle % (2 * np.pi),)
+        )
+
+    def _get_info(self):
+        return {"block_pose": np.array(list(self.block.position) + [self.block.angle])}
+
+    def _render_frame(self, mode):
+        if self.window is None and mode == "human":
+            pygame.init()
+            pygame.display.init()
+            self.window = pygame.display.set_mode((self.window_size, self.window_size))
+        if self.clock is None and mode == "human":
+            self.clock = pygame.time.Clock()
+
+        canvas = pygame.Surface((self.window_size, self.window_size))
+        canvas.fill((255, 255, 255))
+        self.screen = canvas
+        draw_options = DrawOptions(canvas)
+
+        goal_body = self._get_goal_pose_body(self.goal_pose)
+        for shape in self.block.shapes:
+            goal_points = [
+                pymunk.pygame_util.to_pygame(
+                    goal_body.local_to_world(v), draw_options.surface
+                )
+                for v in shape.get_vertices()
+            ]
+            pygame.draw.polygon(canvas, self.goal_color, goal_points)
+
+        self.space.debug_draw(draw_options)
+
+        if mode == "human":
+            self.window.blit(canvas, canvas.get_rect())
+            pygame.event.pump()
+            pygame.display.update()
+
+        img = np.transpose(np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2))
+        img = cv2.resize(img, (self.render_size, self.render_size))
+
+        if self.render_action and (self.latest_action is not None):
+            action = np.array(self.latest_action)
+            coord = (action / self.window_size * self.render_size).astype(np.int32)
+            marker_size = int(8 / 96 * self.render_size)
+            thickness = int(1 / 96 * self.render_size)
+            cv2.drawMarker(
+                img, tuple(coord), (255, 0, 0), cv2.MARKER_CROSS, marker_size, thickness
+            )
+        return img
 
     def close(self):
-        """Closes the environment and its associated renderer."""
-        self.renderer.close()
+        if self.window is not None:
+            pygame.display.quit()
+            pygame.quit()
 
-    def _get_obs(self) -> np.ndarray:
-        """Constructs the observation array from the simulation state."""
-        agent_pos = self.simulator.agent.position
-        block_pos = self.simulator.block.position
-        block_angle = self.simulator.block.angle % (2 * np.pi)
-        return np.array(
-            list(agent_pos) + list(block_pos) + [block_angle], dtype=np.float32
-        )
+    def seed(self, seed=None):
+        if seed is None:
+            seed = np.random.randint(0, 2**32 - 1)
+        self._seed = seed
+        self.np_random = np.random.default_rng(seed)
 
-    def _get_info(self) -> Dict[str, Any]:
-        """Returns diagnostic information about the current step."""
-        return {"n_contacts": self.simulator.n_contact_points}
+    def _set_state(self, state):
+        pos_agent = state[:2]
+        pos_block = state[2:4]
+        rot_block = state[4]
+        self.agent.position = pos_agent
+        self.block.angle = rot_block
+        self.block.position = pos_block
+        self.space.step(1.0 / self.sim_hz)
 
-    def _calculate_reward(self) -> Tuple[float, bool]:
-        """Calculates reward based on Intersection over Union (IoU) of the block
-        and goal geometries.
+    def _setup(self):
+        self.space = pymunk.Space()
+        self.space.gravity = 0, 0
+        self.space.damping = 0.1
+        self.teleop = False
 
-        Returns:
-          A tuple containing the reward and a boolean indicating if the task is done.
-        """
-        block_geom = self._pymunk_to_shapely(
-            self.simulator.block, self.simulator.block.shapes
-        )
-        intersection_area = self._goal_geom.intersection(block_geom).area
-        union_area = self._goal_geom.union(block_geom).area
+        walls = [
+            self._add_segment((5, 506), (5, 5), 2),
+            self._add_segment((5, 5), (506, 5), 2),
+            self._add_segment((506, 5), (506, 506), 2),
+            self._add_segment((5, 506), (506, 506), 2),
+        ]
+        self.space.add(*walls)
 
-        iou = intersection_area / union_area if union_area > 0 else 0.0
-        reward = np.clip(iou, 0.0, 1.0)
-        done = iou > self.config.success_threshold
-        return reward, done
+        self.agent = self.add_circle((256, 400), 15)
+        self.block = self.add_tee((256, 300), 0)
+        self.goal_color = pygame.Color("LightGreen")
+        self.goal_pose = np.array([256, 256, np.pi / 4])
+        self.success_threshold = 0.95
 
-    @staticmethod
-    def _pymunk_to_shapely(
-        body: pymunk.Body, shapes: List[pymunk.Shape]
-    ) -> sg.MultiPolygon:
-        """Converts a Pymunk body's shapes into a single Shapely MultiPolygon.
+    def _add_segment(self, a, b, radius):
+        shape = pymunk.Segment(self.space.static_body, a, b, radius)
+        shape.color = pygame.Color("LightGray")
+        return shape
 
-        Args:
-          body: The Pymunk body.
-          shapes: The list of Pymunk shapes attached to the body.
+    def add_circle(self, position, radius):
+        body = pymunk.Body(body_type=pymunk.Body.KINEMATIC)
+        body.position = position
+        shape = pymunk.Circle(body, radius)
+        shape.color = pygame.Color("RoyalBlue")
+        self.space.add(body, shape)
+        return body
 
-        Returns:
-          A Shapely MultiPolygon representing the combined geometry.
-        """
-        geoms = []
-        for shape in shapes:
-            if isinstance(shape, pymunk.Poly):
-                # Transform vertices from local body coordinates to world coordinates.
-                world_coords = [body.local_to_world(v) for v in shape.get_vertices()]
-                geoms.append(sg.Polygon(world_coords))
-        return sg.MultiPolygon(geoms)
+    def add_tee(self, position, angle, scale=30, color="LightSlateGray"):
+        mass = 1
+        length = 4
+        vertices1 = [
+            (-length * scale / 2, scale),
+            (length * scale / 2, scale),
+            (length * scale / 2, 0),
+            (-length * scale / 2, 0),
+        ]
+        inertia1 = pymunk.moment_for_poly(mass, vertices=vertices1)
+        vertices2 = [
+            (-scale / 2, scale),
+            (-scale / 2, length * scale),
+            (scale / 2, length * scale),
+            (scale / 2, scale),
+        ]
+        inertia2 = pymunk.moment_for_poly(mass, vertices=vertices2)
+        body = pymunk.Body(mass, inertia1 + inertia2)
+        shape1 = pymunk.Poly(body, vertices1)
+        shape2 = pymunk.Poly(body, vertices2)
+        shape1.color = pygame.Color(color)
+        shape2.color = pygame.Color(color)
+        body.center_of_gravity = (
+            shape1.center_of_gravity + shape2.center_of_gravity
+        ) / 2
+        body.position = position
+        body.angle = angle
+        self.space.add(body, shape1, shape2)
+        return body
+
+    def _get_goal_pose_body(self, pose):
+        body = pymunk.Body(1, pymunk.moment_for_box(1, (50, 100)))
+        body.position = pose[:2].tolist()
+        body.angle = pose[2]
+        return body
