@@ -1,16 +1,10 @@
-import abc
-import dataclasses
 from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
-import gymnasium as gym
 import numpy as np
 import pygame
 import pymunk
 import pymunk.pygame_util
-import shapely.geometry as sg
-from gymnasium import spaces
-from pymunk.vec2d import Vec2d
 
 from env_configs.pusht import PushTConfig
 from simulators.pusht import PushTPhysicsSimulator
