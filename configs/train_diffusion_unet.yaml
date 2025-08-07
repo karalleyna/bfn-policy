@@ -1,0 +1,44 @@
+# @package _global_
+
+# Configuration for the pusht_image task.
+name: pusht_image
+
+# Shape metadata for the task's observations and actions.
+shape_meta:
+  action:
+    shape: [2]
+  obs:
+    agent_pos:
+      shape: [2]
+      type: low_dim
+    image:
+      shape: [3, 96, 96]
+      type: rgb
+
+# Dataset configuration
+dataset:
+  _target_: diffusion_policy.dataset.pusht_image_dataset.PushTImageDataset
+  zarr_path: data/pusht/pusht_cchi_v7_replay.zarr
+  horizon: ${horizon}
+  pad_before: ${eval:'${n_obs_steps}-1'}
+  pad_after: ${eval:'${n_action_steps}-1'}
+  seed: 42
+  val_ratio: 0.02
+  max_train_episodes: 90
+
+# Environment runner for evaluation
+env_runner:
+  _target_: diffusion_policy.env_runner.pusht_image_runner.PushTImageRunner
+  max_steps: 300
+  n_train: 6
+  n_train_vis: 2
+  n_test: 50
+  n_test_vis: 4
+  n_obs_steps: ${n_obs_steps}
+  n_action_steps: ${n_action_steps}
+  fps: 10
+  train_start_seed: 0
+  test_start_seed: 100000
+  legacy_test: true
+  past_action: ${past_action_visible}
+

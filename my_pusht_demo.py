@@ -79,7 +79,7 @@ def main(output, render_size, control_hz):
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     replay_buffer = ReplayBuffer.from_path(output_path, mode="a")
-    env = PushTEnv(render_size=render_size)
+    env = PushTEnv()
     env.render_mode = "human"
 
     print("Instructions: Control the blue agent with your mouse.")

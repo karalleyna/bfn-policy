@@ -1,0 +1,80 @@
+device: cuda:0
+seed: 42
+debug: false
+resume: true
+
+# Training loop settings
+num_epochs: 3050
+max_train_steps: null
+max_val_steps: null
+
+# Optimizer and LR Scheduler
+lr_scheduler: 'cosine'
+lr_warmup_steps: 500
+gradient_accumulate_every: 1
+
+# Exponential Moving Average
+use_ema: true
+
+# Frequencies for various events
+val_every: 1
+sample_every: 5
+rollout_every: 50
+checkpoint_every: 50
+
+# Miscellaneous
+tqdm_interval_sec: 1.0
+
+# Dataloader settings
+dataloader:
+  batch_size: 64
+  num_workers: 8
+  shuffle: true
+  pin_memory: true
+  persistent_workers: false
+
+val_dataloader:
+  batch_size: 64
+  num_workers: 8
+  shuffle: false
+  pin_memory: true
+  persistent_workers: false
+
+# Checkpoint settings
+checkpoint:
+  topk:
+    monitor_key: "test_mean_score"
+    mode: "max"
+    k: 5
+    format_str: "epoch={epoch:04d}-test_mean_score={test_mean_score:.3f}.ckpt"
+  save_last_ckpt: true
+  save_last_snapshot: false
+
+# Logging settings
+logging:
+  project: "diffusion_policy_debug"
+  resume: true
+  mode: "online"
+  id: null
+  group: null
+  tags:
+    - ${name}
+    - ${task.name}
+    - ${exp_name}
+
+# Optimizer settings
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 1.0e-4
+  betas: [0.95, 0.999]
+  eps: 1.0e-8
+  weight_decay: 1.0e-6
+
+# EMA settings
+ema:
+  _target_: diffusion_policy.model.diffusion.ema_model.EMAModel
+  update_after_step: 0
+  inv_gamma: 1.0
+  power: 0.75
+  min_value: 0.0
+  max_value: 0.9999

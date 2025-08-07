@@ -23,9 +23,6 @@ def device() -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# =========================== Unit Test Classes ===========================
-
-
 class TestConv1dBlock:
     """A suite of unit tests for the Conv1dBlock class."""
 
